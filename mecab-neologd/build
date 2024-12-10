@@ -1,0 +1,42 @@
+#!/bin/bash
+set -euxo pipefail
+
+WORKSPACE=/tmp/mecab-ipadic-neologd
+
+
+echo-stderr() {
+	local message="$*"
+	printf "%s\n" "$message" 1>&2
+}
+
+
+throw() {
+	local message="$*"
+	echo-stderr "error: $message"
+	false
+}
+
+
+install-mecab-ipadic-neologd() {
+	mkdir -p "$WORKSPACE"
+	git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd.git "$WORKSPACE/mecab-ipadic-neologd"
+
+	(cd "$WORKSPACE/mecab-ipadic-neologd"
+		git apply /tmp/mecab-ipadic-neologd.patch
+		./bin/install-mecab-ipadic-neologd -n -y
+	)
+}
+
+
+cleanup() {
+	rm -rf "$WORKSPACE"
+}
+
+
+main() {
+	install-mecab-ipadic-neologd
+	cleanup
+}
+
+
+main "$*"
