@@ -1,0 +1,87 @@
+diff --git a/src/exec/Makefile b/src/exec/Makefile
+index 4fc1168..e3bbeef 100644
+--- a/src/exec/Makefile
++++ b/src/exec/Makefile
+@@ -20,8 +20,8 @@ BINS = namelti_cli
+ all: $(BINS)
+ 
+ CXX := g++
+-CXXFLAGS := -Wall -Wextra -O3 -std=c++11 -isystem../../include -I..
+-CXXLIBS := -lnamelti
++CXXFLAGS := -Wall -Wextra -O3 -std=c++11 -isystem../../include -I.. `mecab-config --cflags`
++CXXLIBS := -lnamelti `mecab-config --libs`
+ 
+ debug: CXXFLAGS += -DDEBUG -g
+ debug: all
+diff --git a/src/namelti_processor.cc b/src/namelti_processor.cc
+index cd5ce5c..c73461b 100644
+--- a/src/namelti_processor.cc
++++ b/src/namelti_processor.cc
+@@ -30,7 +30,7 @@ NameltiProcessor::NameltiProcessor(): transcripter(NameltiTranscripter()) {
+ NameltiProcessor::~NameltiProcessor() {
+ }
+ 
+-std::vector<std::pair<std::string, float>>  NameltiProcessor::ConvertName(std::string query, size_t nbest_num = 5) {
++std::vector<std::pair<std::string, float>>  NameltiProcessor::ConvertName(std::string query, size_t nbest_num) {
+   std::vector<std::pair<std::string, float>> processor_result;
+   try{
+     std::vector<std::string> queries;
+@@ -47,7 +47,7 @@ std::vector<std::pair<std::string, float>>  NameltiProcessor::ConvertName(std::s
+   return processor_result;
+ }
+ 
+-std::map<std::string, std::vector<std::pair<std::string, float>>> NameltiProcessor::ConvertNameList(std::vector<std::string> queries, size_t nbest_num = 5) {
++std::map<std::string, std::vector<std::pair<std::string, float>>> NameltiProcessor::ConvertNameList(std::vector<std::string> queries, size_t nbest_num) {
+   std::map<std::string, std::vector<std::pair<std::string, float>>> processor_result;
+ 
+   try{
+diff --git a/src/namelti_processor.h b/src/namelti_processor.h
+index 4c13b13..46f0bcd 100644
+--- a/src/namelti_processor.h
++++ b/src/namelti_processor.h
+@@ -29,8 +29,8 @@ class NameltiProcessor {
+ public:
+   NameltiProcessor();
+   virtual ~NameltiProcessor();
+-  std::vector<std::pair<std::string, float>> ConvertName(std::string, size_t);
+-  std::map<std::string, std::vector<std::pair<std::string, float>>> ConvertNameList(std::vector<std::string>, size_t);
++  std::vector<std::pair<std::string, float>> ConvertName(std::string, size_t nbest_num = 5);
++  std::map<std::string, std::vector<std::pair<std::string, float>>> ConvertNameList(std::vector<std::string>, size_t nbest_num = 5);
+ private:
+   NameltiTranscripter transcripter;
+ };
+diff --git a/src/namelti_transcripter.cc b/src/namelti_transcripter.cc
+index da95683..2974611 100644
+--- a/src/namelti_transcripter.cc
++++ b/src/namelti_transcripter.cc
+@@ -35,7 +35,7 @@ NameltiTranscripter::~NameltiTranscripter() {
+ 
+ NameltiTranscripter::Tagger* NameltiTranscripter::GetTagger() {
+   Tagger *t = new Tagger;
+-  std::string _mecab_options = "-d /usr/lib64/mecab/dic/mecab-ipadic-neologd";
++  std::string _mecab_options = "-d /usr/lib/aarch64-linux-gnu/mecab/dic/mecab-ipadic-neologd";
+   t->mecab = MeCab::createTagger(_mecab_options.c_str());
+   return t;
+ }
+@@ -48,7 +48,7 @@ bool has_key_using_find(std::map<std::string, std::vector<std::pair<std::string,
+   }
+ }
+ 
+-std::map<std::string, std::vector<std::pair<std::string, float> > > NameltiTranscripter::GetTranscript(std::vector<std::string> &queries, size_t nbest_num = 5) {
++std::map<std::string, std::vector<std::pair<std::string, float> > > NameltiTranscripter::GetTranscript(std::vector<std::string> &queries, size_t nbest_num) {
+   std::map<std::string, std::vector<std::pair<std::string, float> > > transcripter_result;
+   try {
+     for (std::string& query : queries) {
+diff --git a/src/namelti_transcripter.h b/src/namelti_transcripter.h
+index 740d82c..f89bf5a 100644
+--- a/src/namelti_transcripter.h
++++ b/src/namelti_transcripter.h
+@@ -34,7 +34,7 @@ public:
+   };
+ 
+   Tagger* GetTagger();
+-  std::map<std::string, std::vector<std::pair<std::string, float>>> GetTranscript(std::vector<std::string>&, size_t);
++  std::map<std::string, std::vector<std::pair<std::string, float>>> GetTranscript(std::vector<std::string>&, size_t nbest_num = 5);
+ 
+ private:
+   NameltiTranscripter::Tagger *tagger;

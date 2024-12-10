@@ -1,0 +1,52 @@
+#!/bin/bash
+set -euxo pipefail
+
+WORKSPACE=/tmp/namelti
+
+
+echo-stderr() {
+	local message="$*"
+	printf "%s\n" "$message" 1>&2
+}
+
+
+throw() {
+	local message="$*"
+	echo-stderr "error: $message"
+	false
+}
+
+
+install-namelti() {
+	mkdir -p "$WORKSPACE"
+	git clone --depth 1 https://github.com/neologd/namelti.git "$WORKSPACE/namelti"
+
+	(cd "$WORKSPACE/namelti"
+		git apply /tmp/namelti.patch
+	)
+
+	(cd "$WORKSPACE/namelti/src"
+		make
+		make install
+	)
+
+	(cd "$WORKSPACE/namelti/src/exec"
+		make
+		make install
+	)
+}
+
+
+clean() {
+	rm -rf "$WORKSPACE"
+}
+
+
+main() {
+	install-namelti
+	clean
+	/usr/sbin/ldconfig
+}
+
+
+main "$*"
